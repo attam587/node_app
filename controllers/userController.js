@@ -1,10 +1,14 @@
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 const pool = require("../config/db");
-let users = [
-    {id: 1, name: "Atta", age: 35},
-    {id: 2, name: "Usman", age: 30}
-];
+
+const {
+    createUserService,
+    updateUserService,
+    deleteUserService,
+    getAllUserService,
+    getUserByIdService
+} = require("../services/userServices");
 
 // get User & handle error Async
 
@@ -25,14 +29,11 @@ exports.createUser = async (req, res, next) => {
         if (!name || !age) {
             return next(new AppError("Name and age are required!", 400));
         }
-        const result = await pool.query(
-            "INSERT INTO users (name, age) VALUES ($1, $2) RETURNING *",
-            [name, age]
-        );
+        const user = await createUserService(name, age);
         res.status(200).json({
             status: true,
             message: "Added new user",
-            user: result.rows[0],
+            user: user,
         });
     } catch (error) {
         next(error)
@@ -43,13 +44,11 @@ exports.createUser = async (req, res, next) => {
 
 exports.getAllUser = async (req, res, next) => {
     try {
-        const result = await pool.query (
-            "SELECT * FROM USERS"
-        );
+        const users = await getAllUserService();
         res.json({
             status: true,
-            count: result.rows.length,
-            data: result.rows
+            count: users.length,
+            data: users
         });
     } catch (error) {
         next(error)
@@ -60,14 +59,14 @@ exports.getAllUser = async (req, res, next) => {
 
 exports.getUserById = async (req, res, next) => {
     try {
-        const result = await pool.query ("SELECT * FROM USERS WHERE id = $1", [req.params.id]);
-        if (result.rows.length === 0) {
+        const user = await getUserByIdService(req.params.id);
+        if (!user) {
             return next(new AppError("User not found", 404));
         }
         res.status(200).json({
             status: true,
             message: "user found successfully",
-            data: result.rows[0]
+            data: user
         });
     } catch (error) {
         next(error)
@@ -79,20 +78,13 @@ exports.getUserById = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
     try {
-        const result = await pool.query ("SELECT * FROM USERS WHERE id = $1", [req.params.id]);
-        if (result.rows.length === 0) {
-            return next(new AppError("User not found", 404));
-        }
-
         const {name, age} = req.body;
-        const user = await pool.query (
-            "UPDATE users SET name=$1, age=$2 WHERE id=$3 RETURNING *",
-            [name, age, req.params.id]
-        );
-        res.status(200).json({
+        const user = await updateUserService(req.params.id, name, age);
+        if (!user) {return next(new AppError("User not found", 404));}
+        res.json({
             status: true,
             message: "Update successfully!",
-            data: user.rows[0]
+            data: user
         });  
     } catch (error) {
         next(error)
@@ -103,18 +95,14 @@ exports.updateUser = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
     try {
-        const result = await pool.query(
-            "DELETE FROM users WHERE id = $1 RETURNING *",
-            [req.params.id]
-        );
-        if (result.rows.length === 0 ) {
+        const user = await deleteUserService(req.params.id);
+        if (!user) {
             return next(new AppError("User not found", 404));
         }
         res.json({
             message: "User deleted",
-            data: result.rows[0]
+            data: user
         })
-
     } catch (error) {
         next(error)
     }
