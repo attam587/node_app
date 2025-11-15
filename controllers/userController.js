@@ -1,6 +1,6 @@
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
-
+const pool = require("../config/db");
 let users = [
     {id: 1, name: "Atta", age: 35},
     {id: 2, name: "Usman", age: 30}
