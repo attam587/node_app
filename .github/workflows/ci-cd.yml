@@ -18,13 +18,11 @@ jobs:
         ports:
           - 5432:5432
         env:
-          PGUSER: attakhan
-          PGPASSWORD: 1234
-          PGDATABASE: node_app
-          PGHOST: localhost
-          PGPORT: 5432
+          POSTGRES_USER: attakhan
+          POSTGRES_PASSWORD: 1234
+          POSTGRES_DB: node_app
         options: >-
-          --health-cmd "pg_isready -U ci_user -d ci_db"
+          --health-cmd "pg_isready -U attakhan -d node_app"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -41,13 +39,13 @@ jobs:
       - name: Wait for Postgres to be ready
         run: |
           n=0
-          until pg_isready -h 127.0.0.1 -p 5432 -U ci_user -d ci_db || [ $n -ge 12 ]; do
+          until pg_isready -h 127.0.0.1 -p 5432 -U attakhan -d node_app || [ $n -ge 12 ]; do
             echo "Waiting for postgres..."
             sleep 2
             n=$((n+1))
           done
         env:
-          PGPASSWORD: ci_pass
+          PGPASSWORD: 1234
       - name: Install dependencies
         run: npm ci
 
@@ -55,9 +53,9 @@ jobs:
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-          DB_USER: ci_user
-          DB_PASSWORD: ci_pass
-          DB_NAME: ci_db
+          DB_USER: attakhan
+          DB_PASSWORD: 1234
+          DB_NAME: node_app
         run: npm test --silent
   docker-build-and-push:
     needs: build-and-test
